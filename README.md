@@ -1,10 +1,21 @@
-# DSH Codex Collab
+# DSH Community Plugins
 
-DeepSeek Harness 与 Codex 的本机双向协作插件。当前发布包同时支持 macOS 和 Windows。
+这个仓库维护两套可以独立安装、也可以组合使用的 DeepSeek Harness 社区插件：
+
+- [`plugin/`](plugin/)：DeepSeek Harness 与 Codex 的本机双向协作插件，支持 macOS 和 Windows。
+- [`realtime-voice/`](realtime-voice/)：轻量实时语音插件，使用千问或 OpenAI 完成流式 ASR/TTS，所有推理、记忆、工具与插件调度仍由当前 Harness 会话完成。
 
 > 非官方社区插件，与 DeepSeek AI 或 OpenAI 无隶属关系。适配 DeepSeek Harness developer preview，后续版本可能需要跟随上游破坏性变更调整。
 
-## 能力
+## 实时语音
+
+实时语音包不会在本机部署模型，也不会把千问 Omni 当成第二个对话 Agent。国内线路采用 `Qwen ASR → DeepSeek Harness → Qwen TTS`，转写统一进入 Harness 原生输入框，用户发送后才进入当前会话；完整能力、安装和配置说明见 [`realtime-voice/README.md`](realtime-voice/README.md)。
+
+当前稳定包：`dsh-realtime-voice 0.7.0`。GitHub Release 提供预构建 tarball，安装时不需要授权执行第三方构建脚本。
+
+“嘴巴接场、脑子思考”的自适应低延迟方案正在设计中，架构与安全边界见 [`realtime-voice/docs/ADAPTIVE_FLOOR_MANAGER.md`](realtime-voice/docs/ADAPTIVE_FLOOR_MANAGER.md)。该能力尚未包含在 0.7.0，文档不会把路线图误写成已发布功能。
+
+## Codex 协作能力
 
 - DSH → Codex：检查状态、创建 Codex task、续接同一 task。
 - Codex → DSH：创建、续接、查询和取消 DSH session。
@@ -89,7 +100,7 @@ Windows 安装方式保持不变：
 
 ## 社区发现
 
-本仓库使用 DeepSeek Harness 官方推荐的 [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic，便于在社区插件列表中被发现。DeepSeek Harness 官方项目及社区入口见 [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness)。
+仓库使用 DeepSeek Harness 官方推荐的 [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic。社区展示帖遵循官方 “Show Your Plugins!” 分类规范；两套插件均为社区成员独立开发和维护的非官方项目。DeepSeek Harness 官方项目及社区入口见 [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness)。
 
 ## License
 
