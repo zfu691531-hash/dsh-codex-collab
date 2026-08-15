@@ -14,6 +14,7 @@ function managedBlock(codexCommand) {
     "- id: dsh-codex-collab",
     "  config:",
     `    codexCommand: ${yamlString(codexCommand)}`,
+    "    defaultCwd: \"\"",
     "    statusCommandTimeoutMs: 5000",
     "    taskTimeoutMs: 300000",
     "    connectTimeoutMs: 15000",

@@ -24,6 +24,7 @@ const prompts = {
   roundtrip: [
     "这是 DSH → Codex 协作链路验收。",
     "你必须先调用 codex_status，然后调用 codex_task_start。",
+    `调用 codex_task_start 时把 cwd 设置为 ${process.cwd()}。`,
     "传给 Codex 的任务是：不要调用工具，不要修改文件，只回复 CODEX_WORKER_OK。",
     "等待 Codex 返回后，只回复：DSH_TO_CODEX_OK CODEX_WORKER_OK",
   ].join("\n"),

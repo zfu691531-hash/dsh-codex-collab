@@ -8,10 +8,10 @@ DeepSeek Harness 与 Codex 的本机双向协作插件。当前发布包同时�
 
 - DSH → Codex：检查状态、创建 Codex task、续接同一 task。
 - Codex → DSH：创建、续接、查询和取消 DSH session。
-- 使用 stdio MCP 与 DSH loopback Host API，不创建公网服务。
+- 使用 stdio app-server/MCP 与 DSH loopback Host API，不创建公网服务。
 - 安装 Codex `dsh-collab` Skill，在用户明确要求协作时触发。
 
-核心插件包为 `dsh-codex-collab-0.1.3.tgz`。macOS 适配层会自动定位 Homebrew、ChatGPT/Codex App 和命令行工具，并把 Codex 的绝对路径写入 DSH profile，避免从 Finder 启动 Harness 时丢失终端 PATH。Codex companion 启动时还会自动发现 Harness 桌面版的动态 Host 端口，无需固定 `3080`。
+核心插件包为 `dsh-codex-collab-0.1.4.tgz`。macOS 适配层会自动定位 Homebrew、ChatGPT/Codex App 和命令行工具，并把 Codex 的绝对路径写入 DSH profile，避免从 Finder 启动 Harness 时丢失终端 PATH。DSH → Codex 改用[官方 app-server](https://developers.openai.com/codex/app-server/)，因此委派任务会显示在 Codex Desktop 正常任务列表中；Codex companion 仍会自动发现 Harness 桌面版的动态 Host 端口，无需固定 `3080`。
 
 ## macOS
 
@@ -85,7 +85,7 @@ Windows 安装方式保持不变：
 - companion 只接受 loopback 地址；macOS 默认使用 `DSH_BASE_URL=auto` 动态发现 Harness Host。
 - 当前不桥接 Codex/DSH 的交互式审批与提问。
 - DSH → Codex 的 task/thread 映射保存在内存中，DSH 重启后丢失。
-- 发布包包含编译产物，不包含上游完整 TypeScript 源码和测试工程。
+- npm 发布包只包含运行所需编译产物；仓库中的 `plugin/` 保留可维护的 TypeScript 源码。
 
 ## 社区发现
 
