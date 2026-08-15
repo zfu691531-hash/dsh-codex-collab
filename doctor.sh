@@ -54,6 +54,8 @@ grep -q '^# >>> dsh-codex-collab managed MCP >>>$' "$CONFIG_PATH" || { echo "COD
 [[ -f "$SERVER_PATH" ]] || { echo "MCP_SERVER_NOT_INSTALLED" >&2; exit 1; }
 [[ -f "$LAUNCHER_PATH" ]] || { echo "MCP_LAUNCHER_NOT_INSTALLED" >&2; exit 1; }
 "$CODEX_COMMAND" --version
+"$CODEX_COMMAND" app-server --help >/dev/null
+echo "CODEX_APP_SERVER_OK"
 
 RESOLVED_BASE_URL="$(DSH_BASE_URL="$DSH_BASE_URL" "$NODE_COMMAND" "$LAUNCHER_PATH" --print-base)"
 HTTP_STATUS="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 5 "$RESOLVED_BASE_URL/")" || {

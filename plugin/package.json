@@ -1,0 +1,81 @@
+{
+  "name": "dsh-codex-collab",
+  "version": "0.1.4",
+  "description": "Visible, bidirectional local collaboration between DeepSeek Harness and Codex Desktop.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "dsh-codex-collab-mcp": "./dist/codex-mcp-server.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./codex-mcp-server": {
+      "types": "./dist/codex-mcp-server.d.ts",
+      "import": "./dist/codex-mcp-server.js",
+      "require": "./dist/codex-mcp-server.cjs"
+    },
+    "./collaboration-message": {
+      "types": "./dist/collaboration-message.d.ts",
+      "import": "./dist/collaboration-message.js",
+      "require": "./dist/collaboration-message.cjs"
+    },
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "dist",
+    "docs",
+    "cordis.patch.yml",
+    "LICENSE"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsup",
+    "verify": "npm run typecheck && npm run build",
+    "mcp:dsh": "node ./dist/codex-mcp-server.js"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.1",
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
+    "@types/node": "^20.14.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zfu691531-hash/dsh-codex-collab.git"
+  },
+  "homepage": "https://github.com/zfu691531-hash/dsh-codex-collab#readme",
+  "bugs": {
+    "url": "https://github.com/zfu691531-hash/dsh-codex-collab/issues"
+  },
+  "keywords": ["deepseek-harness", "dsh", "codex", "codex-desktop", "mcp", "plugin"],
+  "engines": {
+    "node": ">=20"
+  }
+}

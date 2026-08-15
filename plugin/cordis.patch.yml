@@ -1,0 +1,21 @@
+# dsh-codex-collab bundle patch.
+#
+# Applies one INSERT to the profile root: registers the dsh-codex-collab plugin
+# row, which exposes the codex_status / codex_task_start / codex_task_reply
+# tools. The plugin fails soft when Codex is unavailable (tools register and
+# report codexAvailable:false); DSH startup is never blocked.
+#
+# The plugin row is identified by role id `dsh-codex-collab`. Like every
+# official patch, a later patch layer or the user profile may address this row
+# and override `config` (e.g. pin `codexCommand`), with the last write winning.
+
+- insert:
+    - id: dsh-codex-collab
+      name: 'dsh-codex-collab'
+      config:
+        codexCommand: ''
+        defaultCwd: ''
+        statusCommandTimeoutMs: 5000
+        taskTimeoutMs: 300000
+        connectTimeoutMs: 15000
+        keepAlive: true
