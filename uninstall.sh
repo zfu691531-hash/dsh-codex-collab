@@ -38,6 +38,17 @@ PROFILE_PATH="$DSH_ROOT/profiles/$PROFILE_NAME"
 PATCH_PATH="$PROFILE_PATH/cordis.patch.yml"
 STABLE_PACKAGE_DIR="$DSH_ROOT/packages/dsh-codex-collab"
 
+PLUGIN_LIST=""
+if [[ -n "$DSH_COMMAND" ]]; then
+  if PLUGIN_LIST="$("$DSH_COMMAND" plugin --profile "$PROFILE_NAME" list --depth 0 2>&1)"; then
+    :
+  else
+    LIST_EXIT=$?
+    echo "DSH_PLUGIN_LIST_FAILED: $PLUGIN_LIST" >&2
+    exit "$LIST_EXIT"
+  fi
+fi
+
 "$NODE_COMMAND" "$SCRIPT_DIR/configure-codex.mjs" remove "$CONFIG_PATH"
 "$NODE_COMMAND" "$SCRIPT_DIR/configure-dsh.mjs" remove "$PATCH_PATH"
 
@@ -56,15 +67,17 @@ if [[ -f "$SOURCE_SKILL" && -f "$TARGET_SKILL" ]]; then
 fi
 
 if [[ -n "$DSH_COMMAND" ]]; then
-  PLUGIN_LIST="$("$DSH_COMMAND" plugin --profile "$PROFILE_NAME" list --depth 0 2>&1 || true)"
   if echo "$PLUGIN_LIST" | grep -q 'dsh-codex-collab@'; then
     DSH_ARGS=(plugin --profile "$PROFILE_NAME" remove dsh-codex-collab)
     MODULES_FILE="$PROFILE_PATH/node_modules/.modules.yaml"
     if [[ -f "$MODULES_FILE" ]]; then
-      MAX_LENGTH="$(sed -nE 's/^[[:space:]]*virtualStoreDirMaxLength:[[:space:]]*([0-9]+).*/\1/p' "$MODULES_FILE" | head -n 1)"
-      [[ -z "$MAX_LENGTH" ]] || DSH_ARGS+=("--config.virtual-store-dir-max-length=$MAX_LENGTH")
+      MAX_LENGTH="$(sed -nE 's/^[[:space:]]*"?virtualStoreDirMaxLength"?[[:space:]]*:[[:space:]]*"?([0-9]+)"?.*/\1/p' "$MODULES_FILE" | head -n 1)"
     fi
-    "$DSH_COMMAND" "${DSH_ARGS[@]}"
+    if [[ -n "${MAX_LENGTH:-}" ]]; then
+      PNPM_CONFIG_VIRTUAL_STORE_DIR_MAX_LENGTH="$MAX_LENGTH" "$DSH_COMMAND" "${DSH_ARGS[@]}"
+    else
+      "$DSH_COMMAND" "${DSH_ARGS[@]}"
+    fi
   fi
 else
   echo "dsh was not found; the DSH plugin was not removed" >&2

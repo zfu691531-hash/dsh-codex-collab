@@ -114,8 +114,22 @@ Copy-Item -LiteralPath $packagePath -Destination $stablePackagePath -Force
 
 $dshArgs = @('plugin', '--profile', $ProfileName, 'add', $stablePackagePath)
 $maxLength = Get-VirtualStoreMaxLength -ProfilePath $profilePath
-if ($maxLength) { $dshArgs += "--config.virtual-store-dir-max-length=$maxLength" }
-Invoke-NativeChecked -FilePath $dshCommand -NativeArguments $dshArgs -Label 'DSH plugin installation'
+$previousMaxLength = [Environment]::GetEnvironmentVariable('PNPM_CONFIG_VIRTUAL_STORE_DIR_MAX_LENGTH', 'Process')
+try {
+    if ($maxLength) {
+        # pnpm 11 compares this value strictly with the numeric value in .modules.yaml;
+        # the --config.* CLI form reaches pnpm as a string on Windows.
+        $env:PNPM_CONFIG_VIRTUAL_STORE_DIR_MAX_LENGTH = $maxLength
+    }
+    Invoke-NativeChecked -FilePath $dshCommand -NativeArguments $dshArgs -Label 'DSH plugin installation'
+}
+finally {
+    if ($null -eq $previousMaxLength) {
+        Remove-Item Env:PNPM_CONFIG_VIRTUAL_STORE_DIR_MAX_LENGTH -ErrorAction SilentlyContinue
+    } else {
+        $env:PNPM_CONFIG_VIRTUAL_STORE_DIR_MAX_LENGTH = $previousMaxLength
+    }
+}
 
 if (-not (Test-Path -LiteralPath $serverPath -PathType Leaf)) {
     throw "DSH_PLUGIN_INCOMPLETE: companion server was not installed at $serverPath"

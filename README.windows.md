@@ -25,6 +25,7 @@
 - 只连接本机 `127.0.0.1:3080`，不创建公网服务。
 - 插件 TGZ 会复制到 `~/.dsh/packages/dsh-codex-collab/`，解压目录之后可以删除。
 - 安装可重复执行。
+- 已有 profile 若由不同 pnpm/DSH 版本创建，安装器会读取 `.modules.yaml` 中的 virtual store 长度，并只在当前 DSH/pnpm 调用期间传入该值，避免 `ERR_PNPM_VIRTUAL_STORE_DIR_MAX_LENGTH_DIFF`。
 - Codex 配置修改前会生成 `config.toml.dsh-codex-collab.bak`。
 - 如果已有同名但非本安装包管理的 MCP 配置，安装器会停止，不会覆盖。
 - 如果已有不同的 `dsh-collab` Skill，默认停止；需要替换时运行 `install.ps1 -ForceSkill`，原 Skill 会先备份。

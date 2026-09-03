@@ -136,11 +136,15 @@ cp "$SCRIPT_DIR/launch-dsh-collab.mjs" "$STABLE_LAUNCHER_PATH"
 
 DSH_ARGS=(plugin --profile "$PROFILE_NAME" add "$STABLE_PACKAGE_PATH")
 MODULES_FILE="$PROFILE_PATH/node_modules/.modules.yaml"
+MAX_LENGTH=""
 if [[ -f "$MODULES_FILE" ]]; then
-  MAX_LENGTH="$(sed -nE 's/^[[:space:]]*virtualStoreDirMaxLength:[[:space:]]*([0-9]+).*/\1/p' "$MODULES_FILE" | head -n 1)"
-  [[ -z "$MAX_LENGTH" ]] || DSH_ARGS+=("--config.virtual-store-dir-max-length=$MAX_LENGTH")
+  MAX_LENGTH="$(sed -nE 's/^[[:space:]]*"?virtualStoreDirMaxLength"?[[:space:]]*:[[:space:]]*"?([0-9]+)"?.*/\1/p' "$MODULES_FILE" | head -n 1)"
 fi
-"$DSH_COMMAND" "${DSH_ARGS[@]}"
+if [[ -n "$MAX_LENGTH" ]]; then
+  PNPM_CONFIG_VIRTUAL_STORE_DIR_MAX_LENGTH="$MAX_LENGTH" "$DSH_COMMAND" "${DSH_ARGS[@]}"
+else
+  "$DSH_COMMAND" "${DSH_ARGS[@]}"
+fi
 
 [[ -f "$SERVER_PATH" ]] || {
   echo "DSH_PLUGIN_INCOMPLETE: companion server missing at $SERVER_PATH" >&2

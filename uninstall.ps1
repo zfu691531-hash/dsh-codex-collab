@@ -50,6 +50,13 @@ $packageFiles = @(Get-ChildItem -LiteralPath $PSScriptRoot -File -Filter 'dsh-co
 $stablePackageDirectory = Join-Path (Join-Path $dshHome 'packages') 'dsh-codex-collab'
 $stablePackagePath = if ($packageFiles.Count -eq 1) { Join-Path $stablePackageDirectory $packageFiles[0].Name } else { $null }
 
+$pluginList = $null
+if ($dshCommand) {
+    $listArgs = @('plugin', '--profile', $ProfileName, 'list', '--depth', '0')
+    $pluginList = & $dshCommand @listArgs 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) { throw "DSH_PLUGIN_LIST_FAILED: $($pluginList.Trim())" }
+}
+
 & $nodeCommand @($configurator, 'remove', $configPath)
 if ($LASTEXITCODE -ne 0) { throw "Codex MCP removal failed with exit code $LASTEXITCODE" }
 
@@ -70,14 +77,26 @@ if ((Test-Path -LiteralPath $sourceSkill -PathType Leaf) -and (Test-Path -Litera
 }
 
 if ($dshCommand) {
-    $listArgs = @('plugin', '--profile', $ProfileName, 'list', '--depth', '0')
-    $pluginList = & $dshCommand @listArgs 2>&1 | Out-String
     if ($pluginList -match 'dsh-codex-collab@') {
         $removeArgs = @('plugin', '--profile', $ProfileName, 'remove', 'dsh-codex-collab')
         $maxLength = Get-VirtualStoreMaxLength -ProfilePath $profilePath
-        if ($maxLength) { $removeArgs += "--config.virtual-store-dir-max-length=$maxLength" }
-        & $dshCommand @removeArgs
-        if ($LASTEXITCODE -ne 0) { throw "DSH plugin removal failed with exit code $LASTEXITCODE" }
+        $previousMaxLength = [Environment]::GetEnvironmentVariable('PNPM_CONFIG_VIRTUAL_STORE_DIR_MAX_LENGTH', 'Process')
+        try {
+            if ($maxLength) {
+                # pnpm 11 compares this value strictly with the numeric value in .modules.yaml;
+                # the --config.* CLI form reaches pnpm as a string on Windows.
+                $env:PNPM_CONFIG_VIRTUAL_STORE_DIR_MAX_LENGTH = $maxLength
+            }
+            & $dshCommand @removeArgs
+            if ($LASTEXITCODE -ne 0) { throw "DSH plugin removal failed with exit code $LASTEXITCODE" }
+        }
+        finally {
+            if ($null -eq $previousMaxLength) {
+                Remove-Item Env:PNPM_CONFIG_VIRTUAL_STORE_DIR_MAX_LENGTH -ErrorAction SilentlyContinue
+            } else {
+                $env:PNPM_CONFIG_VIRTUAL_STORE_DIR_MAX_LENGTH = $previousMaxLength
+            }
+        }
         if ($stablePackagePath -and (Test-Path -LiteralPath $stablePackagePath -PathType Leaf)) {
             $packagesRoot = [IO.Path]::GetFullPath((Join-Path $dshHome 'packages'))
             $resolvedPackage = [IO.Path]::GetFullPath($stablePackagePath)
