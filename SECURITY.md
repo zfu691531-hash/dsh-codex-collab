@@ -6,6 +6,7 @@
 
 - The Codex companion accepts only HTTP loopback DSH endpoints.
 - The bridge does not expose a public listener.
+- DSH launch tokens are exchanged at the loopback root for an in-memory session cookie. Credential-bearing requests do not follow redirects. Keep `auth-url.txt` private and out of source control; refresh it after restarting DSH.
 - Installer-managed Codex and DSH configuration blocks are marked and backed up before replacement.
 - Interactive approval and clarification requests are not yet bridged between agents.
 

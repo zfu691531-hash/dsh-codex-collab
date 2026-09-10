@@ -11,7 +11,7 @@ DeepSeek Harness 与 Codex 的本机双向协作插件。当前发布包同时�
 - 使用 stdio app-server/MCP 与 DSH loopback Host API，不创建公网服务。
 - 安装 Codex `dsh-collab` Skill，在用户明确要求协作时触发。
 
-核心插件包为 `dsh-codex-collab-0.1.4.tgz`。macOS 适配层会自动定位 Homebrew、ChatGPT/Codex App 和命令行工具，并把 Codex 的绝对路径写入 DSH profile，避免从 Finder 启动 Harness 时丢失终端 PATH。DSH → Codex 改用[官方 app-server](https://developers.openai.com/codex/app-server/)，因此委派任务会显示在 Codex Desktop 正常任务列表中；Codex companion 仍会自动发现 Harness 桌面版的动态 Host 端口，无需固定 `3080`。
+核心插件包为 `dsh-codex-collab-0.1.4-auth.1.tgz`。macOS 适配层会自动定位 Homebrew、ChatGPT/Codex App 和命令行工具，并把 Codex 的绝对路径写入 DSH profile，避免从 Finder 启动 Harness 时丢失终端 PATH。DSH → Codex 改用[官方 app-server](https://developers.openai.com/codex/app-server/)，因此委派任务会显示在 Codex Desktop 正常任务列表中；Codex companion 仍会自动发现 Harness 桌面版的动态 Host 端口，无需固定 `3080`。
 
 ## macOS
 
@@ -71,6 +71,15 @@ Windows 安装方式保持不变：
 配置修改前会生成 `.dsh-codex-collab.bak`。如果发现同名但不受安装器管理的配置或 Skill，安装会停止；使用 `--force-skill` 才会备份并替换冲突 Skill。
 
 ## 使用
+
+新版 DSH 需要本地认证：把当前 DSH 启动时显示的完整带 token 地址保存到
+`~/.dsh/dsh-codex-collab/auth-url.txt`（尊重 `DSH_HOME`），并限制为自己可读。
+DSH 重启后更新这个文件。也可设置 `DSH_AUTH_TOKEN` 或 `DSH_AUTH_URL_FILE`。
+companion 会用 token 换取内存中的会话 Cookie；`doctor` 通过真实的
+`session.list` API 验证认证。Windows 细节见 [本地认证说明](README.windows.md#dsh-本地认证)。
+
+默认适配 DSH `0.1.5` 的 Remote API（`session/list` 等端点和认证的历史流）。
+仍使用旧版点分隔端点的 DSH 可显式设置 `DSH_API_PROTOCOL=legacy`。
 
 在新 Codex task 中说：
 
