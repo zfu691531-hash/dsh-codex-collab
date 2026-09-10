@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 
 const [nodePath, serverPath, cwd, baseUrl = "http://127.0.0.1:3080", launcherPath] = process.argv.slice(2);
+const liveTask = process.env.DSH_SMOKE_TASK === "1";
 if (!nodePath || !serverPath || !cwd) {
   throw new Error("usage: mcp-smoke.mjs <node> <server> <cwd> [baseUrl]");
 }
@@ -57,7 +58,7 @@ const timeout = setTimeout(() => {
   for (const waiter of pending.values()) waiter.reject(new Error(`MCP_SMOKE_TIMEOUT: ${stderr}`));
   pending.clear();
   child.kill();
-}, 15_000);
+}, liveTask ? 180_000 : 15_000);
 
 try {
   await request(1, "initialize", {
@@ -73,6 +74,22 @@ try {
     throw new Error(`MCP_TOOL_MISMATCH: ${JSON.stringify(names)}`);
   }
   process.stdout.write(`MCP_COMPANION_OK ${names.join(",")}\n`);
+  if (liveTask) {
+    const started = await request(3, "tools/call", {
+      name: "dsh_task_start",
+      arguments: { prompt: "Do not use tools or modify files. Reply with only DSH_AUTH_TASK_OK", cwd: process.cwd(), wait: true },
+    });
+    if (started.isError || !JSON.stringify(started).includes("DSH_AUTH_TASK_OK")) throw new Error(`DSH live task failed: ${JSON.stringify(started)}`);
+    const taskId = started.structuredContent?.taskId;
+    if (!taskId) throw new Error("DSH task did not return taskId");
+    const replied = await request(4, "tools/call", {
+      name: "dsh_task_reply", arguments: { taskId, prompt: "Do not use tools. Reply with only DSH_AUTH_REPLY_OK", wait: true },
+    });
+    if (replied.isError || !JSON.stringify(replied).includes("DSH_AUTH_REPLY_OK")) throw new Error(`DSH live reply failed: ${JSON.stringify(replied)}`);
+    const status = await request(5, "tools/call", { name: "dsh_task_status", arguments: { taskId } });
+    if (status.isError || !JSON.stringify(status).includes("DSH_AUTH_REPLY_OK")) throw new Error(`DSH live status failed: ${JSON.stringify(status)}`);
+    process.stdout.write("DSH_AUTH_MCP_TASK_OK start,reply,status\n");
+  }
 } finally {
   clearTimeout(timeout);
   child.stdin.end();

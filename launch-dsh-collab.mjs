@@ -11,10 +11,10 @@ function assertLoopbackBase(raw) {
   const host = url.hostname.toLowerCase();
   const loopback = host === "127.0.0.1" || host === "localhost" || host === "[::1]" || host === "::1";
   if (url.protocol !== "http:" || !loopback) {
-    throw new Error(`DSH base URL must be an HTTP loopback address, got ${raw}`);
+    throw new Error("DSH base URL must be an HTTP loopback address");
   }
   url.pathname = url.pathname.replace(/\/$/u, "");
-  return url.origin;
+  return url.href;
 }
 
 async function probeDsh(baseUrl) {
@@ -25,7 +25,12 @@ async function probeDsh(baseUrl) {
       headers: { "content-type": "application/json; charset=utf-8" },
       body: JSON.stringify({ type: "client-request", rpcId, method: "session.list", payload: {} }),
       signal: AbortSignal.timeout(1500),
+      redirect: "manual",
     });
+    if (response.status === 401) {
+      const message = (await response.text()).trim();
+      return message === "unauthorized" || message === "dsh web authentication required; reopen the URL printed by dsh web.";
+    }
     if (!response.ok) return false;
     const body = await response.json();
     return body?.type === "server-response" && body?.rpcId === rpcId;
@@ -87,7 +92,7 @@ async function resolveBaseUrl() {
 async function main(argv) {
   const baseUrl = await resolveBaseUrl();
   if (argv[0] === "--print-base") {
-    process.stdout.write(`${baseUrl}\n`);
+    process.stdout.write(`${new URL(baseUrl).origin}\n`);
     return;
   }
   const [serverPath] = argv;

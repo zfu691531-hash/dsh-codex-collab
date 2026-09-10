@@ -22,9 +22,27 @@
 
 ## 安全与恢复
 
+### DSH 本地认证
+
+新版 DSH Web API 要求浏览器会话认证。将当前 `dsh web` 启动时显示的完整
+`http://127.0.0.1:3080/?token=...` 地址保存到
+`%USERPROFILE%\.dsh\dsh-codex-collab\auth-url.txt`（先创建目录）。
+设置了 `DSH_HOME` 时，文件位于该目录下的 `dsh-codex-collab/auth-url.txt`。
+这个文件含本机访问凭据，应仅自己可读，不要提交到仓库或粘贴到日志。
+
+桥接通过 DSH 官方的根路径 token 交换获取 Cookie，随后携带 Cookie 调用 API。
+Cookie 仅保存在进程内存中。DSH 重启后启动 token 会变化，需更新上述文件。
+也可以通过 `DSH_AUTH_TOKEN` 或 `DSH_AUTH_URL_FILE` 指定凭据；Codex 启动的
+MCP 进程需要能读取对应环境变量，默认文件方式无需修改 Codex 配置。
+
+`doctor.cmd` 会调用真实的只读 `session.list` API，成功输出
+`DSH_AUTH_API_OK session.list`，随后检查 MCP 工具枚举。
+`DSH_AUTH_REQUIRED` 或认证失败时请更新当前 DSH 启动地址后重试。
+
 - 只连接本机 `127.0.0.1:3080`，不创建公网服务。
 - 插件 TGZ 会复制到 `~/.dsh/packages/dsh-codex-collab/`，解压目录之后可以删除。
 - 安装可重复执行。
+- 已有 profile 若由不同 pnpm/DSH 版本创建，安装器会读取 `.modules.yaml` 中的 virtual store 长度，并只在当前 DSH/pnpm 调用期间传入该值，避免 `ERR_PNPM_VIRTUAL_STORE_DIR_MAX_LENGTH_DIFF`。
 - Codex 配置修改前会生成 `config.toml.dsh-codex-collab.bak`。
 - 如果已有同名但非本安装包管理的 MCP 配置，安装器会停止，不会覆盖。
 - 如果已有不同的 `dsh-collab` Skill，默认停止；需要替换时运行 `install.ps1 -ForceSkill`，原 Skill 会先备份。

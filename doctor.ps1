@@ -53,13 +53,9 @@ if ($config -notmatch '(?m)^# >>> dsh-codex-collab managed MCP >>>$') { throw 'C
 if (-not (Test-Path -LiteralPath $skillPath -PathType Leaf)) { throw 'CODEX_SKILL_NOT_INSTALLED' }
 if (-not (Test-Path -LiteralPath $serverPath -PathType Leaf)) { throw 'MCP_SERVER_NOT_INSTALLED' }
 
-try {
-    $health = Invoke-WebRequest -UseBasicParsing -Uri "$DshBaseUrl/" -TimeoutSec 5
-    if ($health.StatusCode -ne 200) { throw "HTTP $($health.StatusCode)" }
-    Write-Output "DSH_HTTP_OK $($health.StatusCode)"
-} catch {
-    throw "DSH_UNAVAILABLE: $($_.Exception.Message). Restart DeepSeek Harness and retry."
-}
+$authScript = Join-Path $PSScriptRoot 'auth-smoke.mjs'
+& $nodeCommand $authScript $serverPath $DshBaseUrl
+if ($LASTEXITCODE -ne 0) { throw 'DSH_AUTH_API_CHECK_FAILED: follow the authentication error above and retry.' }
 
 $smokeArgs = @($smokeScript, $nodeCommand, $serverPath, $installedRoot, $DshBaseUrl)
 & $nodeCommand @smokeArgs

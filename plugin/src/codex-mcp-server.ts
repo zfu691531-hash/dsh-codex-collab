@@ -4,6 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { dispatchDshTool, DSH_MCP_TOOLS } from "./codex-mcp-tools";
 import { DshApiClient } from "./dsh-api";
+import { DshRemoteApiClient } from "./dsh-remote-api";
 import { DshTaskClient } from "./dsh-task-client";
 
 function positiveEnv(name: string, fallback: number): number {
@@ -16,7 +17,7 @@ function positiveEnv(name: string, fallback: number): number {
 
 export function createDshMcpServer(tasks: DshTaskClient): Server {
   const server = new Server(
-    { name: "dsh-codex-collab", version: "0.1.4" },
+    { name: "dsh-codex-collab", version: "0.1.4-auth.1" },
     {
       capabilities: { tools: {} },
       instructions:
@@ -35,11 +36,24 @@ export function createDshMcpServer(tasks: DshTaskClient): Server {
   return server;
 }
 
-export async function main(): Promise<void> {
-  const api = new DshApiClient({
-    baseUrl: process.env["DSH_BASE_URL"] ?? "http://127.0.0.1:3080",
+function createDshApi(baseUrl?: string): DshApiClient {
+  const protocol = process.env.DSH_API_PROTOCOL?.trim().toLowerCase() || "remote";
+  if (protocol !== "remote" && protocol !== "legacy") {
+    throw new Error("DSH_API_PROTOCOL must be remote or legacy");
+  }
+  const options = {
+    baseUrl: baseUrl ?? process.env["DSH_BASE_URL"] ?? "http://127.0.0.1:3080",
     timeoutMs: positiveEnv("DSH_API_TIMEOUT_MS", 15_000),
-  });
+  };
+  return protocol === "legacy" ? new DshApiClient(options) : new DshRemoteApiClient(options);
+}
+
+export async function checkDshConnection(baseUrl?: string): Promise<void> {
+  await createDshApi(baseUrl).listSessions();
+}
+
+export async function main(): Promise<void> {
+  const api = createDshApi();
   const tasks = new DshTaskClient(api, {
     pollIntervalMs: positiveEnv("DSH_POLL_INTERVAL_MS", 250),
     taskTimeoutMs: positiveEnv("DSH_TASK_TIMEOUT_MS", 10 * 60 * 1000),

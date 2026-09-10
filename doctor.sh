@@ -58,12 +58,9 @@ grep -q '^# >>> dsh-codex-collab managed MCP >>>$' "$CONFIG_PATH" || { echo "COD
 echo "CODEX_APP_SERVER_OK"
 
 RESOLVED_BASE_URL="$(DSH_BASE_URL="$DSH_BASE_URL" "$NODE_COMMAND" "$LAUNCHER_PATH" --print-base)"
-HTTP_STATUS="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 5 "$RESOLVED_BASE_URL/")" || {
-  echo "DSH_UNAVAILABLE: restart DeepSeek Harness and retry" >&2
-  exit 1
-}
-[[ "$HTTP_STATUS" == "200" ]] || { echo "DSH_HTTP_ERROR: $HTTP_STATUS" >&2; exit 1; }
-echo "DSH_HTTP_OK $HTTP_STATUS"
+AUTH_BASE_URL="$DSH_BASE_URL"
+[[ "$AUTH_BASE_URL" == "auto" ]] && AUTH_BASE_URL="$RESOLVED_BASE_URL"
+"$NODE_COMMAND" "$SCRIPT_DIR/auth-smoke.mjs" "$SERVER_PATH" "$AUTH_BASE_URL"
 echo "DSH_BASE_URL $RESOLVED_BASE_URL"
 
 "$NODE_COMMAND" "$SCRIPT_DIR/mcp-smoke.mjs" "$NODE_COMMAND" "$SERVER_PATH" "$INSTALLED_ROOT" "$DSH_BASE_URL" "$LAUNCHER_PATH"
