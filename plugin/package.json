@@ -1,6 +1,6 @@
 {
   "name": "dsh-codex-collab",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "Visible, bidirectional local collaboration between DeepSeek Harness and Codex Desktop.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -58,7 +58,7 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6"
+    "@deepseek-ai/dsh-tools": ">=0.1.0-rc.6"
   },
   "peerDependenciesMeta": {
     "@deepseek-ai/cordis": {
@@ -74,7 +74,14 @@
   "bugs": {
     "url": "https://github.com/zfu691531-hash/dsh-codex-collab/issues"
   },
-  "keywords": ["deepseek-harness", "dsh", "codex", "codex-desktop", "mcp", "plugin"],
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "codex",
+    "codex-desktop",
+    "mcp",
+    "plugin"
+  ],
   "engines": {
     "node": ">=20"
   }

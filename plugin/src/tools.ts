@@ -4,6 +4,25 @@ import type { TaskManager } from "./task-manager";
 import type { StatusProbe } from "./status";
 import { clarificationForPrompt, isPromptIntegrityError } from "./prompt-integrity";
 
+/**
+ * DSH 0.2.x validates every tool result as lossless JSON: an `undefined` or
+ * non-finite leaf is rejected ("value is not lossless JSON"). Strip those
+ * leaves instead of leaking optional fields into the wire result.
+ */
+function lossless<T>(value: T): T {
+  if (Array.isArray(value)) return value.map((item) => lossless(item)) as unknown as T;
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      if (item === undefined || typeof item === "function" || typeof item === "symbol") continue;
+      if (typeof item === "number" && !Number.isFinite(item)) continue;
+      out[key] = lossless(item);
+    }
+    return out as T;
+  }
+  return value;
+}
+
 const REFERENCES_PARAMETER = {
   type: "array" as const,
   description: "HTTP(S) references preserved as structured collaboration inputs.",
@@ -194,7 +213,7 @@ export function createTools(manager: TaskManager, statusGetter?: () => StatusPro
     async execute() {
       const probe = statusGetter?.();
       if (probe) {
-        return {
+        return lossless({
           codexAvailable: probe.codexAvailable,
           version: probe.version,
           mcpServerHelpOk: probe.mcpServerHelpOk,
@@ -202,10 +221,10 @@ export function createTools(manager: TaskManager, statusGetter?: () => StatusPro
           failures: probe.failures,
           backend: probe.codexAvailable ? manager.getBackendKind() : ("unavailable" as const),
           tasks: await manager.listTasks(),
-        };
+        });
       }
       const report = await manager.probe();
-      return {
+      return lossless({
         codexAvailable: report.codexAvailable,
         version: report.version,
         mcpServerHelpOk: report.mcpServerHelpOk,
@@ -213,7 +232,7 @@ export function createTools(manager: TaskManager, statusGetter?: () => StatusPro
         failures: report.failures,
         backend: report.backend,
         tasks: report.tasks,
-      };
+      });
     },
   });
 
@@ -265,9 +284,9 @@ export function createTools(manager: TaskManager, statusGetter?: () => StatusPro
           permissions,
           model: args.model,
         });
-        return { ...value, state: "succeeded" as const };
+        return lossless({ ...value, state: "succeeded" as const });
       } catch (error) {
-        if (isPromptIntegrityError(error)) return clarificationForPrompt(error);
+        if (isPromptIntegrityError(error)) return lossless(clarificationForPrompt(error));
         throw error;
       }
     },
@@ -294,9 +313,9 @@ export function createTools(manager: TaskManager, statusGetter?: () => StatusPro
     async execute(args) {
       try {
         const value = await manager.reply(args.taskId, args.prompt, { references: args.references, artifacts: args.artifacts });
-        return { ...value, taskId: args.taskId, state: "succeeded" as const };
+        return lossless({ ...value, taskId: args.taskId, state: "succeeded" as const });
       } catch (error) {
-        if (isPromptIntegrityError(error)) return clarificationForPrompt(error, { taskId: args.taskId });
+        if (isPromptIntegrityError(error)) return lossless(clarificationForPrompt(error, { taskId: args.taskId }));
         throw error;
       }
     },

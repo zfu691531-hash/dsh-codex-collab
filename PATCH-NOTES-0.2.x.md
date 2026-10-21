@@ -52,7 +52,50 @@ node <repo>\configure-codex.mjs add "$env:USERPROFILE\.codex\config.toml" (Get-C
 
 Restart the Codex app so it loads the MCP server; no DeepSeek Harness restart is needed for this direction.
 
+## DSH → Codex (cordis plugin) on 0.2.x
+
+Installed into the desktop profile (version bumped to 0.1.6). Three more fixes were needed:
+
+1. **Peer range blocked installation.** 0.2.1's plugin manager refuses any plugin whose
+   `@deepseek-ai/dsh-tools` requirement does not match, and the plugin declared `^0.1.0-rc.6`.
+   Widened to `>=0.1.0-rc.6` (the API the plugin uses — `defineTool`, `ctx.tools.register`,
+   `ctx.effect` — still exists in 0.2.1). Installing without this yields
+   `Plugin dsh-codex-collab@0.1.4 is incompatible with dsh 0.2.1-rc.2`.
+2. **Tool results were rejected as "not lossless JSON".** 0.2.x validates tool output strictly;
+   `codex_status` returned optional fields as `undefined` (`version`, `resolved`, …).
+   Added a `lossless()` pass in `plugin/src/tools.ts` that drops `undefined`/non-finite leaves
+   before returning.
+3. **The default Codex executable cannot run the configured model.** The resolver picked
+   `~/.codex/.sandbox-bin/codex.exe` (codex-cli 0.153.1), which answers
+   `The 'gpt-6.1-sol' model is not supported when using Codex with a ChatGPT account`.
+   Pin the desktop CLI in the profile patch layer instead:
+
+   ```yaml
+   - id: dsh-codex-collab
+     config:
+       codexCommand: 'C:\Users\st\AppData\Local\OpenAI\Codex\bin\<hash>\codex.exe'  # codex-cli 0.163.0-alpha.10.2
+       defaultCwd: ''
+       statusCommandTimeoutMs: 5000
+       taskTimeoutMs: 300000
+       connectTimeoutMs: 15000
+       keepAlive: true
+   ```
+
+   `<hash>` changes when the Codex app updates; re-point after an update.
+
+Also note: the desktop profile has **no restart requirement** — the Harness hot-reloads plugin
+installs and `cordis.patch.yml` edits (about 1–2 s). The plugin manager's version check runs at
+install time, so a stale `cordis.patch.yml` override is applied without re-validation.
+
+### Verified
+
+```text
+codex_status      → codexAvailable: true, version codex-cli 0.163.0-alpha.10.2, backend: app-server
+codex_task_start  → "只回复两个字：收到" → 收到
+codex_task_reply  → "再回复两个字：也收到" → 也收到
+```
+
 ## Still open
 
-- DSH → Codex (the `codex_status` / `codex_task_*` tools) comes from the separate cordis plugin in `plugin/`. It is **not** installed here, because installing a bundle into the desktop profile requires a Harness restart and its peer range still targets an older `@deepseek-ai/dsh-tools`.
 - Deleting a Session is not exposed as a gateway endpoint; `session/delete` is ACP-only (`404` over HTTP).
+- The `codexCommand` path is version-pinned because Codex keeps the CLI under a build hash directory.
