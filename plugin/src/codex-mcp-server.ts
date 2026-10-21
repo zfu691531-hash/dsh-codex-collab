@@ -37,7 +37,8 @@ export function createDshMcpServer(tasks: DshTaskClient): Server {
 
 export async function main(): Promise<void> {
   const api = new DshApiClient({
-    baseUrl: process.env["DSH_BASE_URL"] ?? "http://127.0.0.1:3080",
+    // "auto" discovers the Host origin for the current launch (the port is random).
+    baseUrl: process.env["DSH_BASE_URL"] ?? "auto",
     timeoutMs: positiveEnv("DSH_API_TIMEOUT_MS", 15_000),
   });
   const tasks = new DshTaskClient(api, {
