@@ -47,6 +47,7 @@ V1 的 Task 标识是 DSH `sessionId` / Codex `threadId`，语义保持简单，
 npm install
 npm run typecheck
 npm run build
+npm test
 ```
 
 仓库根目录提供真实双向联调：
@@ -62,7 +63,7 @@ node integration-smoke.mjs roundtrip
 
 ```powershell
 npm pack
-dsh plugin --profile web add D:\path\to\dsh-codex-collab-0.1.4.tgz
+dsh plugin --profile desktop add D:\path\to\dsh-codex-collab-0.1.7.tgz
 ```
 
 发布到 registry 后可直接：
@@ -76,7 +77,7 @@ dsh plugin --profile web add dsh-codex-collab
 先完成 `npm run build`，再注册同包 companion：
 
 ```powershell
-codex mcp add dsh-collab --env DSH_BASE_URL=http://127.0.0.1:3080 -- node D:\Projects\backend\dsh-codex-collab\dist\codex-mcp-server.js
+codex mcp add dsh-collab --env DSH_BASE_URL=auto -- node D:\Projects\backend\dsh-codex-collab\dist\codex-mcp-server.js
 codex mcp list
 ```
 
@@ -84,7 +85,7 @@ codex mcp list
 
 可选环境变量：
 
-- `DSH_BASE_URL`：默认 `http://127.0.0.1:3080`，仅接受 HTTP loopback。
+- `DSH_BASE_URL`：默认 `auto`，发现本次启动的 Host 动态端口；显式地址仅接受 HTTP loopback。
 - `DSH_API_TIMEOUT_MS`：单次 Host API 超时，默认 15000。
 - `DSH_TASK_TIMEOUT_MS`：等待一轮完成的上限，默认 600000。
 - `DSH_POLL_INTERVAL_MS`：本机事件日志轮询间隔，默认 250。
@@ -103,7 +104,11 @@ codex mcp list
     keepAlive: true
 ```
 
-`codexCommand` 留空时，插件依次检查 PATH、Codex/ChatGPT App 内置可执行文件和 Windows App Execution Alias，并实际运行 `codex --version` 与 `codex app-server --help`。`defaultCwd` 是 DSH 未传 `cwd` 时的兜底；有工作区时工具会优先传入当前 DSH 工作区，以便 Codex Desktop 正确分组。
+`codexCommand` 解析顺序：显式配置、`CODEX_BIN`、Windows 桌面 CLI、PATH、Windows App Execution Alias。桌面 CLI 扫描 `%LOCALAPPDATA%\OpenAI\Codex\bin\*\codex.exe`，运行 `--version` 后按 SemVer 从高到低排序（含 alpha 数字序号），不依赖构建哈希。每次插件加载重新扫描；将旧的哈希路径配置清空为 `codexCommand: ''` 才会启用自动选择。Windows 禁止使用 `.sandbox-bin`，包括显式配置、PATH 和符号链接。选中后再检查 `app-server --help`；候选顺序、选择结果和失败原因均写入 `codex_status.failures`。
+
+desktop profile 安装插件和修改 `cordis.patch.yml` 后由 Harness 热加载，无需重启。热加载会释放旧 app-server 和内存 taskId 映射，应等当前任务结束再升级。在该 profile 的 `.npmrc` 中持久设置 `virtual-store-dir-max-length=60`，避免 pnpm 后续安装时与已有虚拟存储配置冲突。详见仓库根目录 `README.windows.md`。
+
+若 esbuild 因受限目录访问无法构建，可用 `npm run build:portable`：通过 TypeScript 生成同样的 ESM/CJS 入口、类型声明和 source maps，再运行 `npm test`、`npm pack`。`codex_status` 和任务工具的所有返回值均经过 lossless 清理和各自 `output.schema` 的递归投影。
 
 ## 当前边界
 

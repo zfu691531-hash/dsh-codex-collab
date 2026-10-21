@@ -1,9 +1,20 @@
 import { spawn } from "node:child_process";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
-const [nodePath, serverPath, cwd, baseUrl = "http://127.0.0.1:3080", launcherPath] = process.argv.slice(2);
-if (!nodePath || !serverPath || !cwd) {
+const [nodePath, rawServerPath, rawCwd, baseUrl = "auto", rawLauncherPath] = process.argv.slice(2);
+if (!nodePath || !rawServerPath || !rawCwd) {
   throw new Error("usage: mcp-smoke.mjs <node> <server> <cwd> [baseUrl]");
 }
+const serverPath = resolve(rawServerPath);
+const cwd = resolve(rawCwd);
+const launcherPath = rawLauncherPath ? resolve(rawLauncherPath) : undefined;
+
+// A tools/list handshake alone never connects to DSH. Check the authenticated
+// session/list endpoint too, using exactly the companion's origin discovery.
+const companion = await import(pathToFileURL(resolve(serverPath)).href);
+await companion.checkDshHealth(baseUrl);
+process.stdout.write(`DSH_HTTP_OK ${baseUrl} session/list\n`);
 
 const child = spawn(nodePath, launcherPath ? [launcherPath, serverPath] : [serverPath], {
   cwd,
@@ -52,6 +63,12 @@ child.stderr.setEncoding("utf8");
 child.stderr.on("data", (chunk) => {
   stderr += chunk;
 });
+const rejectPending = (error) => {
+  for (const waiter of pending.values()) waiter.reject(error);
+  pending.clear();
+};
+child.on("error", rejectPending);
+child.on("exit", (code) => rejectPending(new Error(`MCP_SMOKE_EXIT ${code}: ${stderr}`)));
 
 const timeout = setTimeout(() => {
   for (const waiter of pending.values()) waiter.reject(new Error(`MCP_SMOKE_TIMEOUT: ${stderr}`));
@@ -60,11 +77,12 @@ const timeout = setTimeout(() => {
 }, 15_000);
 
 try {
-  await request(1, "initialize", {
+  const initialized = await request(1, "initialize", {
     protocolVersion: "2025-06-18",
     capabilities: {},
-    clientInfo: { name: "dsh-codex-collab-doctor", version: "0.1.0" },
+    clientInfo: { name: "dsh-codex-collab-doctor", version: "0.1.7" },
   });
+  process.stdout.write(`MCP_SERVER_VERSION ${initialized.serverInfo.version}\n`);
   send({ jsonrpc: "2.0", method: "notifications/initialized", params: {} });
   const listed = await request(2, "tools/list");
   const names = listed.tools.map((tool) => tool.name).sort();

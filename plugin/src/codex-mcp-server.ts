@@ -16,7 +16,7 @@ function positiveEnv(name: string, fallback: number): number {
 
 export function createDshMcpServer(tasks: DshTaskClient): Server {
   const server = new Server(
-    { name: "dsh-codex-collab", version: "0.1.4" },
+    { name: "dsh-codex-collab", version: "0.1.7" },
     {
       capabilities: { tools: {} },
       instructions:
@@ -37,7 +37,8 @@ export function createDshMcpServer(tasks: DshTaskClient): Server {
 
 export async function main(): Promise<void> {
   const api = new DshApiClient({
-    baseUrl: process.env["DSH_BASE_URL"] ?? "http://127.0.0.1:3080",
+    // "auto" discovers the Host origin for the current launch (the port is random).
+    baseUrl: process.env["DSH_BASE_URL"] ?? "auto",
     timeoutMs: positiveEnv("DSH_API_TIMEOUT_MS", 15_000),
   });
   const tasks = new DshTaskClient(api, {
@@ -46,6 +47,11 @@ export async function main(): Promise<void> {
   });
   const server = createDshMcpServer(tasks);
   await server.connect(new StdioServerTransport());
+}
+
+/** Read-only authenticated Host check, sharing the companion's auto discovery. */
+export async function checkDshHealth(baseUrl = "auto"): Promise<void> {
+  await new DshApiClient({ baseUrl, timeoutMs: 5000 }).call("session.list", {});
 }
 
 const launchedDirectly = /(?:^|[\\/])codex-mcp-server\.(?:js|cjs)$/.test(process.argv[1] ?? "");

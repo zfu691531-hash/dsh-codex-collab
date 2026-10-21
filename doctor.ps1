@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$ProfileName = 'web',
-    [string]$DshBaseUrl = 'http://127.0.0.1:3080'
+    [string]$DshBaseUrl = 'auto'
 )
 
 Set-StrictMode -Version 2.0
@@ -53,14 +53,7 @@ if ($config -notmatch '(?m)^# >>> dsh-codex-collab managed MCP >>>$') { throw 'C
 if (-not (Test-Path -LiteralPath $skillPath -PathType Leaf)) { throw 'CODEX_SKILL_NOT_INSTALLED' }
 if (-not (Test-Path -LiteralPath $serverPath -PathType Leaf)) { throw 'MCP_SERVER_NOT_INSTALLED' }
 
-try {
-    $health = Invoke-WebRequest -UseBasicParsing -Uri "$DshBaseUrl/" -TimeoutSec 5
-    if ($health.StatusCode -ne 200) { throw "HTTP $($health.StatusCode)" }
-    Write-Output "DSH_HTTP_OK $($health.StatusCode)"
-} catch {
-    throw "DSH_UNAVAILABLE: $($_.Exception.Message). Restart DeepSeek Harness and retry."
-}
-
+# mcp-smoke checks authenticated session/list with dynamic Host discovery.
 $smokeArgs = @($smokeScript, $nodeCommand, $serverPath, $installedRoot, $DshBaseUrl)
 & $nodeCommand @smokeArgs
 if ($LASTEXITCODE -ne 0) { throw "MCP companion smoke test failed with exit code $LASTEXITCODE" }
