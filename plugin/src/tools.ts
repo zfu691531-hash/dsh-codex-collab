@@ -23,6 +23,37 @@ function lossless<T>(value: T): T {
   return value;
 }
 
+/** Recursively keep the public shape declared by the tool's output schema. */
+function projectOutput(value: unknown, schema: unknown): unknown {
+  if (!schema || typeof schema !== "object") return value;
+  const shape = schema as {
+    properties?: Record<string, unknown>;
+    items?: unknown;
+    additionalProperties?: boolean | object;
+  };
+  if (Array.isArray(value)) return value.map((item) => projectOutput(item, shape.items));
+  if (value === null || typeof value !== "object") return value;
+  const projected: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (shape.properties && Object.hasOwn(shape.properties, key)) {
+      projected[key] = projectOutput(item, shape.properties[key]);
+    } else if (shape.additionalProperties !== false) {
+      projected[key] = projectOutput(item, shape.additionalProperties);
+    }
+  }
+  return projected;
+}
+
+/** Apply both wire guards to every success and clarification result. */
+function withOutputGuards(tool: ToolDefinition): ToolDefinition {
+  return {
+    ...tool,
+    async execute(args, execution) {
+      return projectOutput(lossless(await tool.execute(args, execution)), tool.output.schema);
+    },
+  };
+}
+
 const REFERENCES_PARAMETER = {
   type: "array" as const,
   description: "HTTP(S) references preserved as structured collaboration inputs.",
@@ -177,6 +208,7 @@ export function createTools(manager: TaskManager, statusGetter?: () => StatusPro
                   required: true,
                 },
                 lastContent: { type: "string" },
+                codexCwd: { type: "string" },
               },
             },
           },
@@ -321,5 +353,9 @@ export function createTools(manager: TaskManager, statusGetter?: () => StatusPro
     },
   });
 
-  return { status, taskStart, taskReply };
+  return {
+    status: withOutputGuards(status),
+    taskStart: withOutputGuards(taskStart),
+    taskReply: withOutputGuards(taskReply),
+  };
 }

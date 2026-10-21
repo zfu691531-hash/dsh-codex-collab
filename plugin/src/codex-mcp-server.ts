@@ -16,7 +16,7 @@ function positiveEnv(name: string, fallback: number): number {
 
 export function createDshMcpServer(tasks: DshTaskClient): Server {
   const server = new Server(
-    { name: "dsh-codex-collab", version: "0.1.4" },
+    { name: "dsh-codex-collab", version: "0.1.7" },
     {
       capabilities: { tools: {} },
       instructions:
@@ -47,6 +47,11 @@ export async function main(): Promise<void> {
   });
   const server = createDshMcpServer(tasks);
   await server.connect(new StdioServerTransport());
+}
+
+/** Read-only authenticated Host check, sharing the companion's auto discovery. */
+export async function checkDshHealth(baseUrl = "auto"): Promise<void> {
+  await new DshApiClient({ baseUrl, timeoutMs: 5000 }).call("session.list", {});
 }
 
 const launchedDirectly = /(?:^|[\\/])codex-mcp-server\.(?:js|cjs)$/.test(process.argv[1] ?? "");

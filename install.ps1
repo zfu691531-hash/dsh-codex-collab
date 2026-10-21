@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$ProfileName = 'web',
-    [string]$DshBaseUrl = 'http://127.0.0.1:3080',
+    [string]$DshBaseUrl = 'auto',
     [switch]$ForceSkill,
     [switch]$DryRun
 )
@@ -63,8 +63,10 @@ function Get-VirtualStoreMaxLength {
 }
 
 $bundleRoot = [IO.Path]::GetFullPath($PSScriptRoot)
-$packages = @(Get-ChildItem -LiteralPath $bundleRoot -File -Filter 'dsh-codex-collab-*.tgz')
-if ($packages.Count -ne 1) { throw "Expected exactly one dsh-codex-collab TGZ beside install.ps1; found $($packages.Count)" }
+$packages = @(Get-ChildItem -LiteralPath $bundleRoot -File -Filter 'dsh-codex-collab-*.tgz' |
+    Sort-Object { [version]($_.BaseName -replace '^dsh-codex-collab-', '') } -Descending |
+    Select-Object -First 1)
+if ($packages.Count -eq 0) { throw 'No dsh-codex-collab TGZ found beside install.ps1' }
 $packagePath = $packages[0].FullName
 $dshCommand = Resolve-NativeCommand -Name 'dsh'
 if (-not $dshCommand) { throw 'DSH_NOT_FOUND: install DeepSeek Harness and ensure dsh is on PATH' }
@@ -141,4 +143,4 @@ Write-Output 'INSTALL_OK'
 Write-Output "DSH profile: $ProfileName"
 Write-Output "Codex config: $configPath"
 Write-Output "Codex skill: $targetSkill"
-Write-Output 'Restart DeepSeek Harness and Codex, then run doctor.cmd.'
+Write-Output 'Desktop profile hot-reloads. Open a new Codex session, then run doctor.cmd with the same -ProfileName.'

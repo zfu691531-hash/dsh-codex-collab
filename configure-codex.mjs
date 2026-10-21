@@ -92,7 +92,7 @@ async function remove(configPath) {
 }
 
 async function main(argv) {
-  const [operation, configPath, nodePath, serverPath, cwd, baseUrl = "http://127.0.0.1:3080", launcherPath] = argv;
+  const [operation, configPath, nodePath, serverPath, cwd, baseUrl = "auto", launcherPath] = argv;
   if (!operation || !configPath) {
     throw new Error("usage: configure-codex.mjs <check-add|add|remove> <config> [node] [server] [cwd] [baseUrl]");
   }

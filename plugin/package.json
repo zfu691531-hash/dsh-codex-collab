@@ -1,6 +1,6 @@
 {
   "name": "dsh-codex-collab",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Visible, bidirectional local collaboration between DeepSeek Harness and Codex Desktop.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -40,8 +40,11 @@
     "LICENSE"
   ],
   "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "test:release": "node test/release-smoke.mjs",
     "typecheck": "tsc --noEmit",
     "build": "tsup",
+    "build:portable": "node build-portable.mjs",
     "verify": "npm run typecheck && npm run build",
     "mcp:dsh": "node ./dist/codex-mcp-server.js"
   },

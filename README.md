@@ -11,7 +11,7 @@ DeepSeek Harness 与 Codex 的本机双向协作插件。当前发布包同时�
 - 使用 stdio app-server/MCP 与 DSH loopback Host API，不创建公网服务。
 - 安装 Codex `dsh-collab` Skill，在用户明确要求协作时触发。
 
-核心插件包为 `dsh-codex-collab-0.1.4.tgz`。macOS 适配层会自动定位 Homebrew、ChatGPT/Codex App 和命令行工具，并把 Codex 的绝对路径写入 DSH profile，避免从 Finder 启动 Harness 时丢失终端 PATH。DSH → Codex 改用[官方 app-server](https://developers.openai.com/codex/app-server/)，因此委派任务会显示在 Codex Desktop 正常任务列表中；Codex companion 仍会自动发现 Harness 桌面版的动态 Host 端口，无需固定 `3080`。
+核心插件包为 `dsh-codex-collab-0.1.7.tgz`。macOS 适配层会自动定位 Homebrew、ChatGPT/Codex App 和命令行工具，并把 Codex 的绝对路径写入 DSH profile，避免从 Finder 启动 Harness 时丢失终端 PATH。DSH → Codex 改用[官方 app-server](https://developers.openai.com/codex/app-server/)，因此委派任务会显示在 Codex Desktop 正常任务列表中；Codex companion 仍会自动发现 Harness 桌面版的动态 Host 端口，无需固定 `3080`。
 
 ## macOS
 

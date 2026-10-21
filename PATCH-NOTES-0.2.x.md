@@ -68,7 +68,7 @@ Installed into the desktop profile (version bumped to 0.1.6). Three more fixes w
 3. **The default Codex executable cannot run the configured model.** The resolver picked
    `~/.codex/.sandbox-bin/codex.exe` (codex-cli 0.153.1), which answers
    `The 'gpt-6.1-sol' model is not supported when using Codex with a ChatGPT account`.
-   Pin the desktop CLI in the profile patch layer instead:
+   0.1.6 temporarily pinned the desktop CLI in the profile patch layer (historical workaround):
 
    ```yaml
    - id: dsh-codex-collab
@@ -81,7 +81,7 @@ Installed into the desktop profile (version bumped to 0.1.6). Three more fixes w
        keepAlive: true
    ```
 
-   `<hash>` changes when the Codex app updates; re-point after an update.
+   Superseded in 0.1.7: clear codexCommand to an empty string. The resolver scans desktop build directories and selects the highest probed SemVer, so no hash needs to be updated.
 
 Also note: the desktop profile has **no restart requirement** — the Harness hot-reloads plugin
 installs and `cordis.patch.yml` edits (about 1–2 s). The plugin manager's version check runs at
@@ -98,4 +98,4 @@ codex_task_reply  → "再回复两个字：也收到" → 也收到
 ## Still open
 
 - Deleting a Session is not exposed as a gateway endpoint; `session/delete` is ACP-only (`404` over HTTP).
-- The `codexCommand` path is version-pinned because Codex keeps the CLI under a build hash directory.
+- Fixed in 0.1.7: codexCommand is no longer hash-pinned by default. See RELEASE-NOTES-0.1.7.md.
